@@ -82,3 +82,9 @@ int _heapOverflow(int arg0) {
 4. login 就能利用成功
 
 ![](./img/vuln-uaf-poc1.png)
+
+# Hopper vs Ghidra
+
+Ghidra 生成的伪代码比hopper 逻辑清晰太多了：
+
+- ![](./img/ghidra-main.png)
