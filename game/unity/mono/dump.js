@@ -6,6 +6,7 @@
 const MONO_TABLE_TYPEDEF = 2;
 const MONO_TOKEN_TYPE_DEF = 0x02000000;
 
+var MonoMainAssembly = "Assembly-CSharp";
 var MonoMoudleName = "libmonobdwgc-2.0.dylib";  // darwin
 //                   "mono-2.0-bdwgc.dll";      // windows
 
@@ -46,7 +47,7 @@ var dumpAllClass = new NativeCallback(function (assembly, user_data) {
         return;
     }
 
-    if (mono_image_get_name(image).readUtf8String() == "Assembly-CSharp") {
+    if (mono_image_get_name(image).readUtf8String() == MonoMainAssembly) {
         console.log("AssemblyCsharp Found. Assembly object at :" + image);
 
         // list class
