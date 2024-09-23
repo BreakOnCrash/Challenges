@@ -1,57 +1,85 @@
 // https://tomorrowisnew.com/posts/Hacking-Mono-Games-With-Frida/
+// https://codeshare.frida.re/@Gand3lf/xamarin-antiroot/
 
-var MonoMainAssembly = "Assembly-CSharp";
-var MonoMoudleName = "libmonobdwgc-2.0.dylib";  // darwin
-//                   "mono-2.0-bdwgc.dll";      // windows
+const MonoMainAssembly = "Assembly-CSharp";
+
+var MonoModuleName;
+if (Process.platform === 'darwin' || Process.platform === 'ios') {
+    MonoModuleName = "libmonobdwgc-2.0.dylib";
+} else if (Process.platform === 'win32') {
+    MonoModuleName = "mono-2.0-bdwgc.dll";
+} else if (Process.platform === 'linux' || Process.platform === 'android') {
+    MonoModuleName = "libmonosgen-2.0.so";
+}
+
 
 var Mono = Process.getModuleByName(MonoMoudleName);
+let MonoApi = {
+    mono_get_root_domain: ['pointer'],
+    mono_thread_attach: ['pointer', ['pointer']],
 
-var mono_get_root_domain = new NativeFunction(Mono.getExportByName("mono_get_root_domain"), 'pointer', []);
-var mono_thread_attach = new NativeFunction(Mono.getExportByName("mono_thread_attach"), 'pointer', ['pointer']);
-var mono_assembly_foreach = new NativeFunction(Mono.getExportByName("mono_assembly_foreach"), 'void', ['pointer', 'pointer']);
+    mono_assembly_foreach: ['void', ['pointer', 'pointer']],
 
-var mono_class_from_name = new NativeFunction(Mono.getExportByName("mono_class_from_name"), 'pointer', ['pointer', 'pointer', 'pointer'])
-var mono_class_get_method_from_name = new NativeFunction(Mono.getExportByName("mono_class_get_method_from_name"), 'pointer', ['pointer', 'pointer', 'int'])
-var mono_compile_method = new NativeFunction(Mono.getExportByName("mono_compile_method"), 'pointer', ['pointer'])
+    mono_class_from_name: ['pointer', ['pointer', 'pointer', 'pointer']],
+    mono_class_get_method_from_name: ['pointer', ['pointer', 'pointer', 'int']],
+    mono_compile_method: ['pointer', ['pointer']],
+}
+
+Object.keys(MonoApi).forEach(exportName => {
+    const signature = MonoApi[exportName];
+    if (signature !== null) {
+        const addr = Mono.getExportByName(exportName);
+        if (addr) {
+            MonoApi[exportName] = new NativeFunction(addr, ...signature);
+        } else {
+            console.log("Could not find export: " + exportName);
+        }
+    }
+});
+
 
 var AssemblyCSharpImage;
-
 var findMainImage = new NativeCallback(function (assembly, userData) {
-    var image = mono_assembly_get_image(assembly);
+    var image = MonoApi.mono_assembly_get_image(assembly);
     if (image.isNull()) {
         return;
     }
 
-    if (mono_image_get_name(image).readUtf8String() == MonoMainAssembly) {
+    if (MonoApi.mono_image_get_name(image).readUtf8String() == MonoMainAssembly) {
         console.log("AssemblyCsharp Found. Assembly object at :" + image);
         AssemblyCSharp = image;
         return;
     }
 }, 'void', ['pointer', 'pointer']);
 
-function hookfunc(className, methodName, paramsCount) {
+function hook(className, methodName, paramsCount, callbacks) {
     if (AssemblyCSharpImage != null) {
-        var klass = mono_class_from_name(ptr(AssemblyCsharpAssembly), Memory.allocUtf8String(""), Memory.allocUtf8String(className));
-        var method = mono_class_get_method_from_name(klass, Memory.allocUtf8String(methodName), paramsCount);
-        var methodCompiled = mono_compile_method(method);
+        var klass = MonoApi.mono_class_from_name(ptr(AssemblyCsharpAssembly), Memory.allocUtf8String(""), Memory.allocUtf8String(className));
+        if (!klass) {
+            return;
+        }
 
-        Interceptor.attach(methodCompiled, {
-            onEnter(args) {
-                // TODO
-                for (var i = 0; i < paramsCount; i++) {
-                    console.log("Arg[" + i + "]: " + args[i].toString());
-                }
-            },
-            onLeave: function (retval) {
-                console.log("Return value: " + retval);
-            }
-        });
+        var method = MonoApi.mono_class_get_method_from_name(klass, Memory.allocUtf8String(methodName), paramsCount);
+        if (method){
+            var impl = MonoApi.mono_compile_method(method);
+            Interceptor.attach(impl, {...callbacks})
+        }
     }
 }
 
 
-mono_thread_attach(mono_get_root_domain());
-mono_assembly_foreach(findMainImage, ptr(0));
+MonoApi.mono_thread_attach(MonoApi.mono_get_root_domain())
+MonoApi.mono_assembly_foreach(findMainImage, ptr(0));
 
 // TODO
-hookfunc("", "", 1)
+hook('', '', 3, {
+    onEnter(args) {
+        // TODO
+        for (var i = 0; i < 3; i++) {
+            console.log("Arg[" + i + "]: " + args[i].toString());
+        }
+    },
+    onLeave: function (retval) {
+        console.log("Return value: " + retval);
+    }
+})
