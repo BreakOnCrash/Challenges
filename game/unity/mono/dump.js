@@ -19,7 +19,7 @@ if (Process.platform === 'darwin' || Process.platform === 'ios') {
 
 var Mono = Process.getModuleByName(MonoModuleName);
 let MonoApi = {
-    mono_get_root_domain: ['pointer'],
+    mono_get_root_domain: ['pointer', []],
     mono_thread_attach: ['pointer', ['pointer']],
     
     mono_assembly_foreach: ['void', ['pointer', 'pointer']],
@@ -60,7 +60,7 @@ Object.keys(MonoApi).forEach(exportName => {
     }
 });
 
-var dumpAllClass = new NativeCallback(function (assembly, user_data) {
+var dumpAllClass = new NativeCallback(function (assembly, userData) {
     var image = MonoApi.mono_assembly_get_image(assembly);
     if (image.isNull()) {
         console.log("Image is null for assembly");

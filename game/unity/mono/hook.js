@@ -13,12 +13,14 @@ if (Process.platform === 'darwin' || Process.platform === 'ios') {
 }
 
 
-var Mono = Process.getModuleByName(MonoMoudleName);
+var Mono = Process.getModuleByName(MonoModuleName);
 let MonoApi = {
-    mono_get_root_domain: ['pointer'],
+    mono_get_root_domain: ['pointer', []],
     mono_thread_attach: ['pointer', ['pointer']],
 
     mono_assembly_foreach: ['void', ['pointer', 'pointer']],
+    mono_assembly_get_image: ['pointer', ['pointer']],
+    mono_image_get_name: ['pointer', ['pointer']],
 
     mono_class_from_name: ['pointer', ['pointer', 'pointer', 'pointer']],
     mono_class_get_method_from_name: ['pointer', ['pointer', 'pointer', 'int']],
@@ -47,14 +49,14 @@ var findMainImage = new NativeCallback(function (assembly, userData) {
 
     if (MonoApi.mono_image_get_name(image).readUtf8String() == MonoMainAssembly) {
         console.log("AssemblyCsharp Found. Assembly object at :" + image);
-        AssemblyCSharp = image;
+        AssemblyCSharpImage = image;
         return;
     }
 }, 'void', ['pointer', 'pointer']);
 
 function hook(className, methodName, paramsCount, callbacks) {
     if (AssemblyCSharpImage != null) {
-        var klass = MonoApi.mono_class_from_name(ptr(AssemblyCsharpAssembly), Memory.allocUtf8String(""), Memory.allocUtf8String(className));
+        var klass = MonoApi.mono_class_from_name(ptr(AssemblyCSharpImage), Memory.allocUtf8String(""), Memory.allocUtf8String(className));
         if (!klass) {
             return;
         }
