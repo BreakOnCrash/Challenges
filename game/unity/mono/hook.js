@@ -1,5 +1,19 @@
 // https://tomorrowisnew.com/posts/Hacking-Mono-Games-With-Frida/
 // https://codeshare.frida.re/@Gand3lf/xamarin-antiroot/
+// http://blog.sycsec.com/2019/01/07/Injecting-code-into-C-Sharp-game-scripts-via-Mono/
+
+/*
+$ frida "Game name" -l hook.js
+> hook('', 'Umbrella', 'get_CurrentDurability', {
+    onEnter(args) {
+        console.log("Arg[0]: " + args[0].toString());
+    },
+	onLeave: function (retval) {
+        console.log("Return value: " + retval);
+	}
+})
+
+*/
 
 const MonoMainAssembly = "Assembly-CSharp";
 
@@ -54,17 +68,25 @@ var findMainImage = new NativeCallback(function (assembly, userData) {
     }
 }, 'void', ['pointer', 'pointer']);
 
-function hook(className, methodName, paramsCount, callbacks) {
+let DEBUG = true;
+function hook(namespace, className, methodName, callbacks) {
     if (AssemblyCSharpImage != null) {
-        var klass = MonoApi.mono_class_from_name(ptr(AssemblyCSharpImage), Memory.allocUtf8String(""), Memory.allocUtf8String(className));
-        if (!klass) {
-            return;
-        }
+        var klass = MonoApi.mono_class_from_name(ptr(AssemblyCSharpImage),
+            Memory.allocUtf8String(namespace),
+            Memory.allocUtf8String(className));
 
-        var method = MonoApi.mono_class_get_method_from_name(klass, Memory.allocUtf8String(methodName), paramsCount);
-        if (method){
-            var impl = MonoApi.mono_compile_method(method);
-            Interceptor.attach(impl, {...callbacks})
+        if (klass != 0x0) {
+            if (DEBUG) console.log("Found class: " + className)
+
+            var method = MonoApi.mono_class_get_method_from_name(klass,
+                Memory.allocUtf8String(methodName), -1);
+
+            if (method != 0x0) {
+                if (DEBUG) console.log("Found method: " + methodName)
+
+                var impl = MonoApi.mono_compile_method(method);
+                Interceptor.attach(impl, { ...callbacks })
+            }
         }
     }
 }
@@ -72,16 +94,3 @@ function hook(className, methodName, paramsCount, callbacks) {
 
 MonoApi.mono_thread_attach(MonoApi.mono_get_root_domain())
 MonoApi.mono_assembly_foreach(findMainImage, ptr(0));
-
-// TODO
-hook('', '', 3, {
-    onEnter(args) {
-        // TODO
-        for (var i = 0; i < 3; i++) {
-            console.log("Arg[" + i + "]: " + args[i].toString());
-        }
-    },
-    onLeave: function (retval) {
-        console.log("Return value: " + retval);
-    }
-})

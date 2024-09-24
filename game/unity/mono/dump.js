@@ -3,6 +3,12 @@
 // URL: https://github.com/xia0ji233/MonoDumper/blob/master/GrannyConsole/GrannyConsole.cpp
 // Author: xia0ji233
 
+/*
+Better tool: https://github.com/icsharpcode/AvaloniaILSpy
+
+$ frida "Game name" -l dump.js
+*/
+
 const MONO_TABLE_TYPEDEF = 2;
 const MONO_TOKEN_TYPE_DEF = 0x02000000;
 
