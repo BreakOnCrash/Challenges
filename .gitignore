@@ -71,5 +71,4 @@ iOSInjectionProject/
 .DS_Store
 *.o
 *.dylib
-arm64/rop/test0
-game/ue4
+breaks/arm64/rop/test0
