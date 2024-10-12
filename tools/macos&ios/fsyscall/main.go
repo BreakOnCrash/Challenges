@@ -125,7 +125,10 @@ func searchASM(baseAddr uint64, r io.Reader) error {
 
 		instruction, err := disassemble.Disassemble(startAddr, instrValue, &results)
 		if err != nil {
-			return err
+			// TODO 忽略反编译错误
+			fmt.Printf("disassemble: %x, error: %s\n", instrValue, err)
+			startAddr += instrLen
+			continue
 		}
 
 		cur := instrData{
