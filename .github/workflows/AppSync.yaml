@@ -8,8 +8,6 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-
       - name: Check Theos cache
         run: |
           echo upstream_heads=`git ls-remote https://github.com/theos/theos | head -n 1 | cut -f 1`-`git ls-remote https://github.com/theos/sdks | head -n 1 | cut -f 1` >> $GITHUB_ENV
@@ -33,6 +31,7 @@ jobs:
         run: |
           cd AppSync/
           rm -f packages/*
+          sed -i '' 's/iphone:clang:latest:5.0/iphone:clang:13.7:5.0/' Makefile
           make clean
           make package THEOS_PACKAGING_SCHEME=rootless
 
