@@ -31,7 +31,7 @@ jobs:
         run: |
           cd AppSync/
           rm -f packages/*
-          sed -i '' 's/iphone:clang:latest:5.0/iphone:clang:14.0:14.0/' Makefile
+          sed -i '' 's/iphone:clang:latest:5.0/iphone:clang:14.5:14.5/' Makefile
           make clean
           make package THEOS_PACKAGING_SCHEME=rootless
 
