@@ -1,0 +1,45 @@
+# Build: https://github.com/akemin-dayo/AppSync
+name: Build AppSync
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Theos cache
+        run: |
+          echo upstream_heads=`git ls-remote https://github.com/theos/theos | head -n 1 | cut -f 1`-`git ls-remote https://github.com/theos/sdks | head -n 1 | cut -f 1` >> $GITHUB_ENV
+      - name: Use Theos cache
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/theos
+          key: ${{ runner.os }}-${{ env.upstream_heads }}
+      - name: Prepare Theos
+        uses: Randomblock1/theos-action@main
+
+      - name: Clone AppSync
+        uses: actions/checkout@v4
+        with:
+          repository: akemin-dayo/AppSync
+          ref: master
+          path: AppSync
+
+      - name: Build package
+        run: |
+          cd AppSync/
+          rm -f packages/*
+          make clean
+          make package THEOS_PACKAGING_SCHEME=rootless
+
+      - name: Upload package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -alh
+          gh release upload v1.0 --clobber ${{ github.workspace }}/packages/*.deb
+          gh release edit v1.0 --notes "Latest Appysnc package build by github-action"
