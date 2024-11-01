@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Check Theos cache
         run: |
-          echo runner_os=macos
+          echo runner_os=macos >> $GITHUB_ENV
           echo upstream_heads=`git ls-remote https://github.com/theos/theos | head -n 1 | cut -f 1`-`git ls-remote https://github.com/theos/sdks | head -n 1 | cut -f 1` >> $GITHUB_ENV
       - name: Use Theos cache
         id: cache
