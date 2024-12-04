@@ -1,5 +1,5 @@
 # owasp - iOS UnCrackable L2
-> https://mas.owasp.org/crackmes/
+> https://mas.owasp.org/crackmes/iOS/#ios-uncrackable-l2
 
 两篇解决方案都看完了：
 - http://www.ryantzj.com/cracking-owasp-mstg-ios-crackme-the-uncrackable.html
