@@ -71,4 +71,5 @@ iOSInjectionProject/
 .DS_Store
 *.o
 *.dylib
-breaks/arm64/rop/test0
+.venv/
+tests/
